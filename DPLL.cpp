@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <algorithm>
 #include <vector>
 #include <unordered_map>
 #include <fstream>
@@ -84,43 +85,42 @@ int DPLL::getLiteralAsInt(const std::string& literal) {
     return it->second;
 }
 
-bool DPLL::allClausesSatisfied(const std::unordered_map<int, bool>& model) {
-    for(const auto& clause : cnf) {
-        bool clauseSatisfied = false;
-        for(const int literal : clause) {
-            bool negated = literal < 0;
-            int symbol = abs(literal);
-            if (model.find(symbol) != model.end() && model.at(symbol) != negated) {
-                clauseSatisfied = true;
-                break;
+bool DPLL::isClauseSatisfied(const vector<int>& clause, const std::unordered_map<int, bool>& model) {
+    for (int literal : clause) {
+        int symbol = abs(literal);
+        bool negated = literal < 0;
+
+        if (model.find(symbol) != model.end()) {
+            if (model.at(symbol) != negated) {
+                return true;
             }
         }
-        if(!clauseSatisfied) return false;
+    }
+    return false;
+}
+
+bool DPLL::allClausesSatisfied(const std::unordered_map<int, bool>& model) {
+    for(const auto& clause : cnf) {
+        if(!isClauseSatisfied(clause, model)) {
+            return false;
+        }
     }    
     return true;
 }
 
 bool DPLL::someClauseFalsified(const std::unordered_map<int, bool>& model) {
     for(const auto& clause : cnf) {
-        bool clauseSatisfied = false;
+        bool clauseSatisfied = isClauseSatisfied(clause, model);
         bool allLiteralsAssigned = true;
 
         for(const int literal : clause) {
-            bool negated = literal < 0;
             int symbol = abs(literal);
-            if(model.find(symbol) != model.end()) {
-                if(model.at(symbol) != negated) {
-                    clauseSatisfied = true;
-                    break;
-                }
-            }else {
+            if(model.find(symbol) == model.end()) {
                 allLiteralsAssigned = false;
                 break;
-            }
+            }        
         }
 
-        //if every literal is assigned a value and the clause is not satisfied,
-        //some clause was falsified
         if(allLiteralsAssigned && !clauseSatisfied) {
             return true;
         }
@@ -130,39 +130,68 @@ bool DPLL::someClauseFalsified(const std::unordered_map<int, bool>& model) {
 
 int DPLL::findUnitClause(const std::unordered_map<int, bool>& model) {
     for (const auto& clause : cnf) {
+        if(isClauseSatisfied(clause, model)) {
+            continue;
+        }
+
         int unassignedLiteral = 0;
         bool foundUnassigned = false;
-        bool clauseSatisfied = false;
+
 
         for (int literal : clause) {
-            bool negated = literal < 0;
             int symbol = abs(literal);
 
-            // Check if the literal is assigned in the model
-            if (model.find(symbol) != model.end()) {
-                if (model.at(symbol) != negated) {
-                    clauseSatisfied = true;
-                    break;  // Clause is already satisfied
-                }
-            } else {
-                // Found an unassigned literal
-                if (foundUnassigned) {
-                    // More than one unassigned literal, so not a unit clause
+            if(model.find(symbol) == model.end()) {
+                if(foundUnassigned) {
+                    unassignedLiteral = 0;
                     foundUnassigned = false;
                     break;
+                }else {
+                    foundUnassigned = true;
+                    unassignedLiteral = literal;
                 }
-                foundUnassigned = true;
-                unassignedLiteral = literal;
             }
         }
 
-        // If it's a unit clause and not already satisfied, return the literal
-        if (foundUnassigned && !clauseSatisfied) {
-            return unassignedLiteral; // Positive if true, negative if false
+        if (foundUnassigned) {
+            return unassignedLiteral;
         }
     }
 
-    // If no unit clause is found, return 0 (indicating no unit clause)
+    return 0;
+}
+int DPLL::findPureSymbol(const std::unordered_map<int, bool>& model, const std::vector<int>& literals) {
+    std::unordered_map<int, bool> polarity;
+    std::unordered_map<int, bool> isPure;
+
+    for (int literal : literals) {
+        polarity[literal] = true;
+        isPure[literal] = true;
+    }
+
+    for (const auto& clause : cnf) {
+        if (isClauseSatisfied(clause, model)) {
+            continue;
+        }
+
+        for (int literal : clause) {
+            int symbol = abs(literal);
+            bool negated = literal < 0;
+
+            if (isPure.find(symbol) != isPure.end()) {
+                if (polarity[symbol] != !negated) {
+                    isPure[symbol] = false;
+                }
+            }
+        }
+    }
+
+    for (int literal : literals) {
+        if (isPure[literal]) {
+            return polarity[literal] ? literal : -literal;
+        }
+    }
+
     return 0;
 }
 
@@ -176,10 +205,21 @@ bool DPLL::search(std::unordered_map<int, bool> model, std::vector<int> literals
         return false;
     }
 
+    // commented out for now becuase it negatively impacts performance
+    // maybe not suited for sudoku puzzles with very few pure symbols
+    // int P = findPureSymbol(model, literals);
+    // if(P!= 0) {
+    //     bool sign = P > 0;
+    //     model[abs(P)] = sign;
+    //     literals.erase(std::remove(literals.begin(), literals.end(), abs(P)), literals.end());
+    //     return search(model, literals);
+    // }
+
     int P = findUnitClause(model);
     if(P!= 0) {
         bool sign = P > 0;
         model[abs(P)] = sign;
+        literals.erase(std::remove(literals.begin(), literals.end(), abs(P)), literals.end());
         return search(model, literals);
     }
 

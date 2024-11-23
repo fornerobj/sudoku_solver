@@ -14,10 +14,11 @@ public:
 
     DPLL(const std::string& filename, std::vector<std::string> extraLiterals);
     int getLiteralAsInt(const std::string& literal);
+    bool isClauseSatisfied(const std::vector<int>& clause, const std::unordered_map<int, bool>& model);
     bool allClausesSatisfied(const std::unordered_map<int, bool>&);
     bool someClauseFalsified(const std::unordered_map<int, bool>&);
     int findUnitClause(const std::unordered_map<int, bool>&);
-    int findPureSymbol(const std::unordered_map<int, bool>&);
+    int findPureSymbol(const std::unordered_map<int, bool>& model, const std::vector<int>& literals);
     bool search(std::unordered_map<int, bool>, std::vector<int>);
     void printModel(const std::unordered_map<int,bool>&);
 };
