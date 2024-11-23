@@ -1,4 +1,5 @@
 #include <iostream>
+#include <sstream>
 #include "DPLL.h"
 
 int main(int argc, char* argv[]) {
@@ -16,10 +17,46 @@ int main(int argc, char* argv[]) {
 
     // Collect additional literals if provided
     std::vector<std::string> extraLiterals;
-    for (int i = 2; i < argc; ++i) {
-        extraLiterals.push_back(argv[i]);
-    }
+    std::string line; 
+    int row = 1;
+    for(int i = 0; i < 9; i++) {
+        std::cin >> line;
+        if(line.size() != 9) {
+            std::cout << "Invalid line length (must be 9)" << std::endl;
+            i--;
+            continue;
+        }
+        bool allNums = true;
+        for (char c : line) {
+            if(!isdigit(c)) {
+                allNums = false;
+                break;
+            } 
+        }
+        if(!allNums) {
+            std::cout << "The input line must be all numbers 0-9" << std::endl;
+            i--;
+            continue;
+        }
+        std::stringstream ss;
 
+        int col = 1;
+        for (char c : line) {
+            if(c == '0'){
+                col++;
+                continue;
+            }
+            ss << "V" << row << col << c;
+            extraLiterals.push_back(ss.str());
+            ss.str("");
+            col++;
+        }
+        row++;
+
+    }
+    for(std::string str : extraLiterals) {
+        std::cout << str << std::endl;
+    }
     DPLL problem(filename, extraLiterals);
     if(problem.search({}, problem.literals)) {
         std::cout << "Solution found!" << std::endl;
