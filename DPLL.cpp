@@ -54,7 +54,7 @@ DPLL::DPLL(const string& filename, std::vector<std::string> extraLiterals = {}):
     ifs.close();
 }
 
-void DPLL::printModel(std::unordered_map<int, bool> model) {
+void DPLL::printModel(const std::unordered_map<int, bool>& model) {
     std::cout << "model: {";
     bool first = true;
     for (const auto& pair : model) {
@@ -84,7 +84,7 @@ int DPLL::getLiteralAsInt(const std::string& literal) {
     return it->second;
 }
 
-bool DPLL::allClausesSatisfied(std::unordered_map<int, bool> model) {
+bool DPLL::allClausesSatisfied(const std::unordered_map<int, bool>& model) {
     for(const auto& clause : cnf) {
         bool clauseSatisfied = false;
         for(const int literal : clause) {
@@ -100,7 +100,7 @@ bool DPLL::allClausesSatisfied(std::unordered_map<int, bool> model) {
     return true;
 }
 
-bool DPLL::someClauseFalsified(std::unordered_map<int, bool> model) {
+bool DPLL::someClauseFalsified(const std::unordered_map<int, bool>& model) {
     for(const auto& clause : cnf) {
         bool clauseSatisfied = false;
         bool allLiteralsAssigned = true;
@@ -128,7 +128,7 @@ bool DPLL::someClauseFalsified(std::unordered_map<int, bool> model) {
     return false;
 }
 
-int DPLL::findUnitClause(std::unordered_map<int, bool> model) {
+int DPLL::findUnitClause(const std::unordered_map<int, bool>& model) {
     for (const auto& clause : cnf) {
         int unassignedLiteral = 0;
         bool foundUnassigned = false;
