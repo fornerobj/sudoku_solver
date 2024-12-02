@@ -195,6 +195,32 @@ int DPLL::findPureSymbol(const std::unordered_map<int, bool>& model, const std::
     return 0;
 }
 
+int DPLL::findMOMLiteral(const std::unordered_map<int, bool>& model, const std::vector<int>& literals) {
+    std::unordered_map<int, int> frequency;
+    int maxFrequency = 0;
+    int momLiteral = 0;
+    
+    for (const auto& clause : cnf) {
+        if (isClauseSatisfied(clause, model)) {
+            continue;
+        }
+
+        for (int literal : clause) {
+            int symbol = abs(literal);
+            if (model.find(symbol) == model.end()) {
+                frequency[symbol]++;
+                if(frequency[symbol] > maxFrequency) {
+                    maxFrequency = frequency[symbol];
+                    momLiteral = symbol;
+                }
+            }
+        }
+    }
+
+    
+    return momLiteral;
+}
+
 bool DPLL::search(std::unordered_map<int, bool> model, std::vector<int> literals) {
     numCalls++;
     if (this->allClausesSatisfied(model)){
@@ -223,8 +249,8 @@ bool DPLL::search(std::unordered_map<int, bool> model, std::vector<int> literals
         return search(model, literals);
     }
 
-    P = literals.back();
-    literals.pop_back();
+    P = findMOMLiteral(model, literals);
+    literals.erase(std::remove(literals.begin(), literals.end(), abs(P)), literals.end());
 
     model[P] = true;
     bool P_true = search(model, literals);
@@ -233,7 +259,5 @@ bool DPLL::search(std::unordered_map<int, bool> model, std::vector<int> literals
     }
 
     model[P] = false;
-    bool P_false = search(model, literals);
-
-    return P_false;
+    return search(model, literals);
 }

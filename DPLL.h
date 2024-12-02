@@ -19,6 +19,7 @@ public:
     bool someClauseFalsified(const std::unordered_map<int, bool>&);
     int findUnitClause(const std::unordered_map<int, bool>&);
     int findPureSymbol(const std::unordered_map<int, bool>& model, const std::vector<int>& literals);
+    int findMOMLiteral(const std::unordered_map<int, bool>& model, const std::vector<int>& literals);
     bool search(std::unordered_map<int, bool>, std::vector<int>);
     void printModel(const std::unordered_map<int,bool>&);
 };
